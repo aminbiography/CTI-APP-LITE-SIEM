@@ -44,7 +44,7 @@ You need:
 
 ## 4) Step-by-step usage
 
-### Step A — Export Windows logs (recommended approach)
+### Step A - Export Windows logs (recommended approach)
 
 This page cannot read `.evtx` directly, so export to XML first.
 
@@ -63,7 +63,7 @@ Practical notes:
 
 ---
 
-### Step B — Load logs into the tool
+### Step B - Load logs into the tool
 
 1. Open the HTML page in your browser.
 2. Under **1) Load logs**, click **Choose File** and select your exported XML or JSON file.
@@ -84,7 +84,7 @@ If parsing fails:
 
 ---
 
-### Step C — Load your CTI feeds (offline lists)
+### Step C - Load your CTI feeds (offline lists)
 
 1. Under **2) Load CTI feeds**, paste indicators into the correct boxes:
 
@@ -104,7 +104,7 @@ Best practices:
 
 ---
 
-### Step D — Run extraction + matching
+### Step D - Run extraction + matching
 
 1. Choose **Minimum severity**:
 
@@ -124,7 +124,7 @@ How to read results:
 
 ---
 
-### Step E — Search and triage results
+### Step E - Search and triage results
 
 Use **Search findings** to filter by:
 
@@ -138,7 +138,7 @@ This is intended for fast triage (e.g., “show only this domain” or “show e
 
 ---
 
-### Step F — Export report for sharing
+### Step F - Export report for sharing
 
 Click **Export Report JSON** to download:
 `cti-lite-siem-report.json`
@@ -306,18 +306,18 @@ If you increase event volume (e.g., 50k–200k), you will need:
 
 ## 5) Developer deployment options
 
-### Option A — GitHub Pages
+### Option A - GitHub Pages
 
 * Upload `index.html`
 * Enable GitHub Pages
 * Use as a static site
 
-### Option B — Internal SOC portal
+### Option B - Internal SOC portal
 
 * Host behind SSO/VPN
 * Add security headers (CSP, no-referrer, nosniff)
 
-### Option C — Offline SOC workstation
+### Option C - Offline SOC workstation
 
 * Keep HTML on analyst workstation
 * Run locally with `python -m http.server`
