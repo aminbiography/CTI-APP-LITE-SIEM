@@ -1,0 +1,897 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="author" content="Mohammad Aminul Islam, Amein @aminbiography" />
+  <title>CTI-lite SIEM (Windows)</title>
+
+  <style>
+    :root{
+      /* Theme */
+      --bg: #800080; /* purple */
+      --text: #141414;
+      --muted: rgba(20,20,20,.68);
+
+      /* Surfaces */
+      --card: rgba(255,255,255,.92);
+      --card2: rgba(255,255,255,.86);
+      --border: rgba(0,0,0,.10);
+      --shadow: 0 14px 40px rgba(0,0,0,.14);
+      --shadow-soft: 0 10px 26px rgba(0,0,0,.10);
+
+      /* Radii */
+      --radius: 18px;
+      --radius-sm: 12px;
+
+      /* Accents */
+      --accent: rgba(255,255,255,.22);
+      --focus: rgba(255,255,255,.30);
+
+      /* Status */
+      --ok-bg: #f1fff6;    --ok-bd: #b8e2c8;
+      --warn-bg: #fffaf0;  --warn-bd: #f1d39a;
+      --bad-bg: #fff4f4;   --bad-bd: #f0b0b0;
+    }
+
+    *{ box-sizing: border-box; }
+    html, body{ height: 100%; }
+    body{
+      margin: 0;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background:
+        radial-gradient(1000px 560px at 15% 5%, rgba(255,255,255,.18), transparent 60%),
+        radial-gradient(900px 520px at 85% 15%, rgba(255,255,255,.12), transparent 58%),
+        radial-gradient(1200px 680px at 50% 95%, rgba(0,0,0,.14), transparent 55%),
+        var(--bg);
+    }
+
+    .container{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 16px 28px;
+    }
+
+    /* Top bar */
+    .topbar{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      min-width: 240px;
+    }
+    .brand h1{
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: .2px;
+      color: rgba(255,255,255,.96);
+      text-shadow: 0 2px 14px rgba(0,0,0,.25);
+    }
+    .subtitle{
+      margin: 0;
+      color: rgba(255,255,255,.78);
+      font-size: 13px;
+      line-height: 1.35;
+      max-width: 860px;
+    }
+
+    .statusRow{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+      align-items: center;
+      margin-top: 2px;
+    }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(255,255,255,.12);
+      font-size: 12px;
+      color: rgba(255,255,255,.92);
+      white-space: nowrap;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 6px 18px rgba(0,0,0,.10);
+    }
+    .pill code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      opacity: .95;
+    }
+
+    /* Cards / layout */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .card{
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      background: var(--card);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+    .card h3{
+      margin: 0 0 8px;
+      font-size: 13.5px;
+      letter-spacing: .2px;
+    }
+    .muted{
+      color: var(--muted);
+      font-size: 12.8px;
+      line-height: 1.35;
+    }
+
+    .row{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    .field{
+      display:flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 180px;
+      flex: 1;
+    }
+    label{
+      font-size: 12px;
+      color: rgba(0,0,0,.78);
+    }
+
+    input[type="file"]{ width: 100%; }
+
+    textarea, select, input[type="number"], input[type="text"]{
+      width: 100%;
+      border: 1px solid rgba(0,0,0,.14);
+      border-radius: var(--radius-sm);
+      background: rgba(255,255,255,.90);
+      outline: none;
+      font-size: 13px;
+    }
+
+    textarea{
+      min-height: 118px;
+      resize: vertical;
+      padding: 10px 10px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+    }
+    select, input[type="number"], input[type="text"]{
+      padding: 9px 10px;
+    }
+    textarea:focus, select:focus, input:focus{
+      box-shadow: 0 0 0 4px rgba(128,0,128,.22), 0 0 0 1px rgba(0,0,0,.10);
+      border-color: rgba(128,0,128,.35);
+    }
+
+    .buttons{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+    }
+    button{
+      padding: 9px 12px;
+      border: 1px solid rgba(0,0,0,.15);
+      border-radius: 12px;
+      background: rgba(255,255,255,.92);
+      cursor: pointer;
+      font-size: 13px;
+      transition: transform .05s ease, background .12s ease, border-color .12s ease, box-shadow .12s ease;
+      user-select: none;
+    }
+    button:hover{
+      background: #fff;
+      border-color: rgba(0,0,0,.22);
+      box-shadow: 0 10px 20px rgba(0,0,0,.08);
+    }
+    button:active{ transform: translateY(1px); }
+
+    button.primary{
+      border-color: rgba(128,0,128,.35);
+      background: rgba(128,0,128,.10);
+    }
+    button.primary:hover{
+      background: rgba(128,0,128,.14);
+      border-color: rgba(128,0,128,.45);
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,.10);
+      background: rgba(255,255,255,.80);
+      color: #333;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    .ok{ border-color: var(--ok-bd); background: var(--ok-bg); }
+    .warn{ border-color: var(--warn-bd); background: var(--warn-bg); }
+    .bad{ border-color: var(--bad-bd); background: var(--bad-bg); }
+
+    .split2{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    /* Results */
+    .resultsHead{
+      display:flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .kpi{
+      padding: 12px;
+      border: 1px solid rgba(0,0,0,.08);
+      border-radius: var(--radius);
+      background: var(--card2);
+      box-shadow: var(--shadow-soft);
+    }
+    .kpi .small{ font-size: 12px; color: var(--muted); }
+    .kpi .num{ font-size: 18px; font-weight: 750; margin-top: 4px; }
+
+    .searchBar{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      width: 100%;
+      margin-top: 10px;
+    }
+    .searchBar .field{ min-width: 260px; flex: 2; }
+
+    .scroll{
+      max-height: 480px;
+      overflow: auto;
+      border: 1px solid rgba(0,0,0,.10);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.94);
+    }
+
+    table{
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12.5px;
+    }
+    th, td{
+      border-bottom: 1px solid rgba(0,0,0,.07);
+      padding: 10px 10px;
+      vertical-align: top;
+    }
+    th{
+      text-align: left;
+      color: #333;
+      background: rgba(250,250,250,.96);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      backdrop-filter: blur(10px);
+      font-weight: 650;
+    }
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .footer{
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Responsiveness */
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+      .split2{ grid-template-columns: 1fr; }
+      .topbar{ flex-direction: column; align-items: stretch; }
+      .statusRow{ justify-content: flex-start; }
+      .kpis{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 520px){
+      .kpis{ grid-template-columns: 1fr; }
+      th:nth-child(4), td:nth-child(4),
+      th:nth-child(5), td:nth-child(5),
+      th:nth-child(6), td:nth-child(6){
+        display:none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      button{ transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Windows 11 CTI-lite SIEM</h1>
+        <p class="subtitle">
+          This CTI matching on exported Windows logs. This page cannot directly read Windows Event Logs.
+          Export events (EVTX → XML) using <span class="mono">wevtutil</span> and import the XML, or import JSON.
+        </p>
+      </div>
+
+      <div class="statusRow">
+        <span class="pill author">@aminbiography</span>
+        <span id="logStatus" class="pill">No logs loaded</span>
+        <span id="feedStatus" class="pill">Feeds: 0</span>
+      </div>
+    </div>
+
+    <section class="grid">
+      <div class="card">
+        <h3>1) Load logs</h3>
+        <div class="muted" style="margin-bottom:10px;">
+          Supported: <b>Windows Event Log XML</b> (from <span class="mono">wevtutil qe ... /f:xml</span>) or a JSON array of events.
+        </div>
+
+        <div class="field">
+          <label for="logFile">Log file (.xml / .json / .txt)</label>
+          <input id="logFile" type="file" accept=".xml,.json,.txt" />
+        </div>
+
+        <div class="row" style="margin-top:10px;">
+          <div class="field" style="flex:1; min-width: 160px;">
+            <label for="maxEvents">Max events</label>
+            <input id="maxEvents" type="number" min="1" max="200000" value="3000" />
+          </div>
+          <div class="field" style="flex:2; min-width: 260px;">
+            <label for="jsonFields">Text fields to scan (JSON)</label>
+            <input id="jsonFields" type="text" value="message,RenderedDescription,EventData,UserData" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px; justify-content: space-between;">
+          <div class="buttons">
+            <button id="btnParse" class="primary">Parse Logs</button>
+            <span class="badge" style="border-style:dashed;">Tip: export XML with <span class="mono">wevtutil</span></span>
+          </div>
+        </div>
+
+        <div class="muted" style="margin-top:10px;">
+          Example exports:
+          <div class="mono" style="margin-top:6px; padding:10px; border:1px solid rgba(0,0,0,.08); border-radius:12px; background: rgba(255,255,255,.72);">
+            wevtutil qe Security /c:2000 /rd:true /f:xml &gt; security.xml<br/>
+            wevtutil qe Microsoft-Windows-Sysmon/Operational /c:2000 /rd:true /f:xml &gt; sysmon.xml
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>2) Load CTI feeds (offline lists)</h3>
+        <div class="muted" style="margin-bottom:10px;">
+          Provide newline-separated values for each type (IPs, domains, URLs, hashes). These are matched exactly after normalization.
+        </div>
+
+        <div class="split2">
+          <div class="field">
+            <label for="feedIps">IPs</label>
+            <textarea id="feedIps" placeholder="1.2.3.4&#10;5.6.7.8"></textarea>
+          </div>
+          <div class="field">
+            <label for="feedDomains">Domains</label>
+            <textarea id="feedDomains" placeholder="bad.example&#10;evil.tld"></textarea>
+          </div>
+        </div>
+
+        <div class="split2" style="margin-top:10px;">
+          <div class="field">
+            <label for="feedUrls">URLs</label>
+            <textarea id="feedUrls" placeholder="http://mal.example/a&#10;https://evil.tld/p"></textarea>
+          </div>
+          <div class="field">
+            <label for="feedHashes">Hashes (md5/sha1/sha256)</label>
+            <textarea id="feedHashes" placeholder="44d88612fea8a8f36de82e1278abb02f"></textarea>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px; justify-content: space-between; align-items:flex-start;">
+          <div class="buttons">
+            <button id="btnLoadSampleFeeds">Load sample feeds</button>
+            <button id="btnClearFeeds">Clear feeds</button>
+          </div>
+          <div class="muted" style="max-width: 420px;">
+            This page avoids CTI API calls to prevent key leakage and CORS issues. Add a local proxy later if needed.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:12px;">
+      <div class="resultsHead">
+        <div>
+          <h3 style="margin:0 0 6px;">3) Run extraction + CTI matching</h3>
+          <div class="muted">Extract IOCs from event text, match against the loaded feeds, and generate findings.</div>
+        </div>
+
+        <div class="row" style="gap:10px;">
+          <div class="field" style="min-width: 200px;">
+            <label for="minSeverity">Minimum severity</label>
+            <select id="minSeverity">
+              <option value="LOW">LOW</option>
+              <option value="MEDIUM" selected>MEDIUM</option>
+              <option value="HIGH">HIGH</option>
+            </select>
+          </div>
+          <div class="buttons" style="align-self:flex-end;">
+            <button id="btnRun" class="primary">Run Matching</button>
+            <button id="btnExport">Export Report JSON</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi">
+          <div class="small">Parsed events</div>
+          <div id="kpiEvents" class="num">0</div>
+        </div>
+        <div class="kpi">
+          <div class="small">Extracted IOCs</div>
+          <div id="kpiIocs" class="num">0</div>
+        </div>
+        <div class="kpi">
+          <div class="small">CTI matches</div>
+          <div id="kpiMatches" class="num">0</div>
+        </div>
+        <div class="kpi">
+          <div class="small">Unique matched IOCs</div>
+          <div id="kpiUnique" class="num">0</div>
+        </div>
+      </div>
+
+      <div class="searchBar">
+        <div class="field">
+          <label for="search">Search findings</label>
+          <input id="search" type="text" placeholder="ip/domain/url/hash/event id/channel..." />
+        </div>
+        <span id="runStatus" class="badge">Idle</span>
+      </div>
+
+      <div class="scroll" style="margin-top:10px;">
+        <table id="tbl">
+          <thead>
+            <tr>
+              <th style="width:120px;">Severity</th>
+              <th style="width:170px;">IOC</th>
+              <th style="width:90px;">Type</th>
+              <th style="width:140px;">Channel</th>
+              <th style="width:90px;">Event ID</th>
+              <th style="width:190px;">Time</th>
+              <th>Evidence (snippet)</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="7" class="muted">No findings yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footer">
+        Suggested next step (still single-page): add allowlisting (CDNs, Microsoft domains), local persistence via IndexedDB, and an event detail drawer.
+      </div>
+    </section>
+  </div>
+
+<script>
+/* =========================
+   Utilities: normalization
+   ========================= */
+function normLineList(text) {
+  return (text || "")
+    .split(/\r?\n/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0 && !s.startsWith("#"));
+}
+function normDomain(d) { return (d || "").toLowerCase().replace(/^\.+|\.+$/g, ""); }
+function normUrl(u) { return (u || "").trim(); }
+function normHash(h) { return (h || "").toLowerCase().trim(); }
+
+function setPill(el, text, kind) {
+  el.textContent = text;
+  el.classList.remove("ok","warn","bad");
+  if (kind) el.classList.add(kind);
+}
+function escapeHtml(s) {
+  return (s || "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[c]));
+}
+
+/* =========================
+   IOC extraction (conservative)
+   ========================= */
+const IPV4_RE = /\b(?:(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d?\d)\b/g;
+const URL_RE = /\bhttps?:\/\/[^\s"'<>]+/gi;
+const MD5_RE = /\b[a-fA-F0-9]{32}\b/g;
+const SHA1_RE = /\b[a-fA-F0-9]{40}\b/g;
+const SHA256_RE = /\b[a-fA-F0-9]{64}\b/g;
+const DOMAIN_RE = /\b(?:[a-zA-Z0-9-]{1,63}\.)+(?:[a-zA-Z]{2,24})\b/g;
+
+function extractIOCs(text) {
+  const iocs = [];
+  if (!text) return iocs;
+
+  const ips = new Set(text.match(IPV4_RE) || []);
+  ips.forEach(v => iocs.push({type:"ip", value:v}));
+
+  const urls = new Set(text.match(URL_RE) || []);
+  urls.forEach(v => iocs.push({type:"url", value:normUrl(v)}));
+
+  const hashes = new Set([...(text.match(MD5_RE)||[]), ...(text.match(SHA1_RE)||[]), ...(text.match(SHA256_RE)||[])]);
+  hashes.forEach(v => iocs.push({type:"hash", value:normHash(v)}));
+
+  const domains = new Set(text.match(DOMAIN_RE) || []);
+  domains.forEach(v => {
+    const dl = normDomain(v);
+    if (dl.endsWith(".exe") || dl.endsWith(".dll") || dl.endsWith(".sys") || dl.endsWith(".json") || dl.endsWith(".xml") || dl.endsWith(".local")) return;
+    iocs.push({type:"domain", value:dl});
+  });
+
+  const seen = new Set();
+  const out = [];
+  for (const i of iocs) {
+    const key = i.type + ":" + i.value;
+    if (!seen.has(key)) { seen.add(key); out.push(i); }
+  }
+  return out;
+}
+
+/* =========================
+   Parsing: Windows Event Log XML (wevtutil) and JSON
+   ========================= */
+function getText(node, tagName) {
+  const el = node.getElementsByTagName(tagName)[0];
+  return el ? el.textContent : null;
+}
+
+function parseWindowsEventXml(xmlText, maxEvents) {
+  const doc = new DOMParser().parseFromString(xmlText, "application/xml");
+  const events = Array.from(doc.getElementsByTagName("Event"));
+  const out = [];
+  for (let idx = 0; idx < events.length && out.length < maxEvents; idx++) {
+    const ev = events[idx];
+    const system = ev.getElementsByTagName("System")[0];
+    const channel = system ? getText(system, "Channel") : null;
+
+    const providerNode = system ? system.getElementsByTagName("Provider")[0] : null;
+    const provider = providerNode ? providerNode.getAttribute("Name") : null;
+
+    const eventId = system ? parseInt(getText(system, "EventID") || "0", 10) : null;
+
+    const timeCreatedNode = system ? system.getElementsByTagName("TimeCreated")[0] : null;
+    const timeCreated = timeCreatedNode ? timeCreatedNode.getAttribute("SystemTime") : null;
+
+    const computer = system ? getText(system, "Computer") : null;
+
+    let msg = "";
+    const renderingInfos = ev.getElementsByTagName("RenderingInfo");
+    if (renderingInfos && renderingInfos[0]) {
+      msg = renderingInfos[0].textContent || "";
+    } else {
+      const eventData = ev.getElementsByTagName("EventData")[0];
+      const userData = ev.getElementsByTagName("UserData")[0];
+      msg = (eventData ? eventData.textContent : "") + "\n" + (userData ? userData.textContent : "");
+    }
+
+    out.push({
+      channel: channel || "Unknown",
+      provider: provider || "Unknown",
+      eventId: Number.isFinite(eventId) ? eventId : null,
+      time: timeCreated || null,
+      computer: computer || null,
+      message: (msg || "").trim()
+    });
+  }
+  return out;
+}
+
+function safeStringify(obj) { try { return JSON.stringify(obj); } catch { return String(obj); } }
+
+function parseJsonEvents(jsonText, maxEvents, jsonFieldsCsv) {
+  const fields = (jsonFieldsCsv || "message").split(",").map(s => s.trim()).filter(Boolean);
+  let data;
+  try {
+    data = JSON.parse(jsonText);
+  } catch {
+    const lines = jsonText.split(/\r?\n/).filter(l => l.trim().length);
+    data = lines.map(l => JSON.parse(l));
+  }
+  const arr = Array.isArray(data) ? data : (data && Array.isArray(data.events) ? data.events : []);
+  const out = [];
+  for (let i = 0; i < arr.length && out.length < maxEvents; i++) {
+    const e = arr[i] || {};
+    const channel = e.channel || e.Channel || e.log_name || "Unknown";
+    const eventId = e.event_id ?? e.EventID ?? e.id ?? null;
+    const time = e.time ?? e.TimeCreated ?? e.timestamp ?? e["@timestamp"] ?? null;
+
+    let msgParts = [];
+    for (const f of fields) {
+      if (e[f] != null) msgParts.push(typeof e[f] === "string" ? e[f] : safeStringify(e[f]));
+    }
+    if (msgParts.length === 0) msgParts.push(safeStringify(e));
+
+    out.push({
+      channel,
+      provider: e.provider || e.Provider || "Unknown",
+      eventId: eventId != null ? Number(eventId) : null,
+      time,
+      computer: e.computer || e.Computer || null,
+      message: msgParts.join("\n").trim()
+    });
+  }
+  return out;
+}
+
+/* =========================
+   CTI Feed handling + matching
+   ========================= */
+function loadFeeds() {
+  const ips = new Set(normLineList(document.getElementById("feedIps").value));
+  const domains = new Set(normLineList(document.getElementById("feedDomains").value).map(normDomain));
+  const urls = new Set(normLineList(document.getElementById("feedUrls").value).map(normUrl));
+  const hashes = new Set(normLineList(document.getElementById("feedHashes").value).map(normHash));
+
+  const total = ips.size + domains.size + urls.size + hashes.size;
+
+  // Note: feedStatus is in the purple header row (white pill). Keep it readable there.
+  const feedStatus = document.getElementById("feedStatus");
+  feedStatus.textContent = `Feeds: ${total} (ip:${ips.size} domain:${domains.size} url:${urls.size} hash:${hashes.size})`;
+
+  return {ips, domains, urls, hashes};
+}
+
+function severityForType(type) {
+  if (type === "hash") return "HIGH";
+  if (type === "url") return "HIGH";
+  if (type === "domain") return "MEDIUM";
+  if (type === "ip") return "MEDIUM";
+  return "LOW";
+}
+function severityRank(s) { return s === "HIGH" ? 3 : (s === "MEDIUM" ? 2 : 1); }
+function snippet(text, maxLen=220) {
+  const t = (text || "").replace(/\s+/g, " ").trim();
+  return t.length > maxLen ? t.slice(0, maxLen) + "…" : t;
+}
+
+/* =========================
+   State
+   ========================= */
+let STATE = {
+  events: [],
+  feeds: {ips:new Set(), domains:new Set(), urls:new Set(), hashes:new Set()},
+  findings: [],
+  report: null
+};
+
+function renderFindings(findings) {
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML = "";
+
+  if (!findings.length) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td colspan="7" class="muted">No CTI matches found with the current feeds and logs.</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  for (const f of findings) {
+    const tr = document.createElement("tr");
+    const sevClass = f.severity === "HIGH" ? "bad" : (f.severity === "MEDIUM" ? "warn" : "ok");
+    tr.innerHTML = `
+      <td><span class="badge ${sevClass}">${escapeHtml(f.severity)}</span></td>
+      <td class="mono">${escapeHtml(f.ioc)}</td>
+      <td>${escapeHtml(f.type)}</td>
+      <td>${escapeHtml(f.channel)}</td>
+      <td>${f.eventId != null ? escapeHtml(String(f.eventId)) : ""}</td>
+      <td class="mono">${escapeHtml(f.time || "")}</td>
+      <td>${escapeHtml(f.evidence)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+}
+
+function updateKPIs() {
+  document.getElementById("kpiEvents").textContent = String(STATE.events.length);
+  const totalIocs = STATE.report ? STATE.report.stats.extracted_iocs : 0;
+  document.getElementById("kpiIocs").textContent = String(totalIocs);
+  const matches = STATE.findings.length;
+  document.getElementById("kpiMatches").textContent = String(matches);
+  const uniq = STATE.report ? STATE.report.stats.unique_matched_iocs : 0;
+  document.getElementById("kpiUnique").textContent = String(uniq);
+}
+
+/* =========================
+   Actions
+   ========================= */
+async function readSelectedFile(fileInput) {
+  const f = fileInput.files && fileInput.files[0];
+  if (!f) return null;
+  return await f.text();
+}
+
+document.getElementById("btnLoadSampleFeeds").addEventListener("click", () => {
+  document.getElementById("feedIps").value = "185.234.247.11\n45.142.212.17";
+  document.getElementById("feedDomains").value = "bad-example.test\nevil-tld.test";
+  document.getElementById("feedUrls").value = "http://bad-example.test/payload\nhttps://evil-tld.test/drop";
+  document.getElementById("feedHashes").value =
+    "44d88612fea8a8f36de82e1278abb02f\n" +
+    "275a021bbfb6489e54d471899f7db9d6";
+  STATE.feeds = loadFeeds();
+});
+
+document.getElementById("btnClearFeeds").addEventListener("click", () => {
+  document.getElementById("feedIps").value = "";
+  document.getElementById("feedDomains").value = "";
+  document.getElementById("feedUrls").value = "";
+  document.getElementById("feedHashes").value = "";
+  STATE.feeds = loadFeeds();
+});
+
+document.getElementById("btnParse").addEventListener("click", async () => {
+  const status = document.getElementById("logStatus");
+  status.textContent = "Reading file…";
+
+  const text = await readSelectedFile(document.getElementById("logFile"));
+  if (!text) {
+    status.textContent = "No logs loaded";
+    return;
+  }
+
+  const maxEvents = Number(document.getElementById("maxEvents").value || 3000);
+  const jsonFields = document.getElementById("jsonFields").value;
+
+  try {
+    let events = [];
+    if (text.includes("<Event") && text.includes("</Event>")) {
+      events = parseWindowsEventXml(text, maxEvents);
+      status.textContent = `Parsed XML: ${events.length} events`;
+    } else {
+      events = parseJsonEvents(text, maxEvents, jsonFields);
+      status.textContent = `Parsed JSON: ${events.length} events`;
+    }
+
+    STATE.events = events;
+    STATE.report = null;
+    STATE.findings = [];
+    renderFindings([]);
+    updateKPIs();
+  } catch (e) {
+    console.error(e);
+    status.textContent = "Parse failed (see console)";
+  }
+});
+
+document.getElementById("btnRun").addEventListener("click", () => {
+  const runStatus = document.getElementById("runStatus");
+  runStatus.textContent = "Running…";
+
+  STATE.feeds = loadFeeds();
+  const feedsTotal = STATE.feeds.ips.size + STATE.feeds.domains.size + STATE.feeds.urls.size + STATE.feeds.hashes.size;
+
+  if (!STATE.events.length) { runStatus.textContent = "No events loaded"; return; }
+  if (!feedsTotal) { runStatus.textContent = "No CTI feeds loaded"; return; }
+
+  const minSev = document.getElementById("minSeverity").value;
+  const minRank = severityRank(minSev);
+
+  let extractedCount = 0;
+  const findings = [];
+  const uniqMatched = new Set();
+
+  for (const ev of STATE.events) {
+    const text = ev.message || "";
+    const iocs = extractIOCs(text);
+    extractedCount += iocs.length;
+
+    for (const ioc of iocs) {
+      let hit = false;
+      if (ioc.type === "ip") hit = STATE.feeds.ips.has(ioc.value);
+      else if (ioc.type === "domain") hit = STATE.feeds.domains.has(normDomain(ioc.value));
+      else if (ioc.type === "url") hit = STATE.feeds.urls.has(ioc.value);
+      else if (ioc.type === "hash") hit = STATE.feeds.hashes.has(normHash(ioc.value));
+      if (!hit) continue;
+
+      const sev = severityForType(ioc.type);
+      if (severityRank(sev) < minRank) continue;
+
+      uniqMatched.add(ioc.type + ":" + ioc.value);
+
+      findings.push({
+        severity: sev,
+        ioc: ioc.value,
+        type: ioc.type,
+        channel: ev.channel || "Unknown",
+        eventId: ev.eventId ?? null,
+        time: ev.time || "",
+        evidence: snippet(ev.message, 240)
+      });
+    }
+  }
+
+  findings.sort((a,b) => {
+    const d = severityRank(b.severity) - severityRank(a.severity);
+    if (d !== 0) return d;
+    return String(b.time||"").localeCompare(String(a.time||""));
+  });
+
+  STATE.findings = findings;
+  STATE.report = {
+    generated_at: new Date().toISOString(),
+    stats: {
+      parsed_events: STATE.events.length,
+      extracted_iocs: extractedCount,
+      matches: findings.length,
+      unique_matched_iocs: uniqMatched.size
+    },
+    findings
+  };
+
+  renderFindings(findings);
+  updateKPIs();
+  runStatus.textContent = `Done: ${findings.length} matches`;
+});
+
+document.getElementById("btnExport").addEventListener("click", () => {
+  if (!STATE.report) { alert("Run Matching first to generate a report."); return; }
+  const blob = new Blob([JSON.stringify(STATE.report, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cti-lite-siem-report.json";
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById("search").addEventListener("input", (e) => {
+  const q = (e.target.value || "").toLowerCase().trim();
+  if (!q) { renderFindings(STATE.findings); return; }
+  const filtered = STATE.findings.filter(f => (
+    String(f.ioc).toLowerCase().includes(q) ||
+    String(f.type).toLowerCase().includes(q) ||
+    String(f.channel).toLowerCase().includes(q) ||
+    String(f.eventId ?? "").toLowerCase().includes(q) ||
+    String(f.time ?? "").toLowerCase().includes(q) ||
+    String(f.evidence ?? "").toLowerCase().includes(q)
+  ));
+  renderFindings(filtered);
+});
+
+/* Initialize */
+STATE.feeds = loadFeeds();
+</script>
+</body>
+</html>
