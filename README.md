@@ -2,7 +2,7 @@ Live URL:  https://aminbiography.github.io/CTI-APP-LITE-SIEM/
 
 ---
   
-# Windows OS CTI-LITE SIEM
+# Windows OS CTI-LITE SIEM 
 
 ## User Guide (SOC Analyst / Cybersecurity Analyst / CTI Associate)
  
